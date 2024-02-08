@@ -1,0 +1,14 @@
+Clean the data with 
+tokenization
+lowercase
+uppercase
+emojis
+pancuations
+html,url
+stopwords
+abbravation or slang
+steemming and lemmetization
+spelling correction
+whitspace
+
+ALSO APPLY BOW,OHE,NGRAM,TFIDF AND Comparision Note
