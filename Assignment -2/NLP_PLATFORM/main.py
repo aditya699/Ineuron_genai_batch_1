@@ -1,8 +1,6 @@
 import streamlit as st
-import logging
-from utils import data_loader
-
-logging.basicConfig(filename='main.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+from utils.data_loader import get_data
+from preprocessing.data_preprocessing import clean_data
 def main():
     st.title("Auto Sentiment Analysis")
 
@@ -12,13 +10,15 @@ def main():
     # Load the dataset
     if st.button("Load Dataset"):
         try:
-            data = data_loader.get_data(file_path)
+            data = get_data(file_path)
+            st.write(data.head(1))
             st.write("Dataset loaded successfully!")
-            logging.info("Dataset loaded successfully!")
-
+            data=clean_data(data)
+            st.write("Dataset sucessfully Cleaned")
+            st.write(data.head(1))
+            
         except Exception as e:
             st.error(f"Contact the owner")
-            logging.info(f"Error loading dataset: {str(e)}")
-
+            
 if __name__ == "__main__":
     main()
