@@ -1,6 +1,6 @@
 import streamlit as st
 from utils.data_loader import get_data
-from preprocessing.data_preprocessing import clean_dataframe
+from preprocessing.data_preprocessing import clean_dataframe,multinomial_nb
 
 def main():
     st.title("Auto Sentiment Analysis")
@@ -25,9 +25,13 @@ def main():
             st.success("Dataset successfully cleaned!")
             st.subheader("Cleaned Data Snapshot")
             st.write(data.head(5))
+
+            st.info("One hot Encoding with Naive Bayes Classifer is under process")
+            accuracy=multinomial_nb(data)
+            st.subheader(f"The Model is trained and the accuracy is {accuracy}")
             
         except Exception as e:
-            st.error("An error occurred while processing the dataset. Please check your file path or contact support.")
+            st.error(f"An error occurred while processing the dataset. Please check your file path or contact support.{e}")
 
 if __name__ == "__main__":
     main()
