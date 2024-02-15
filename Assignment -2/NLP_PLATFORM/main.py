@@ -10,9 +10,11 @@ def main():
     st.markdown("---")
     st.write("Welcome to Auto Sentiment Analysis! This tool helps you automate Sentiment Analysis.")
     st.balloons()
+
+    st.write("Approach 1 is Naive Bayes with one hot encoding")
     
     # User input for file path of the dataset
-    file_path = st.text_input("Enter the file path of the dataset:", "/path/to/your/dataset.csv")
+    file_path = st.text_input("Enter the file path of the training dataset:", "/path/to/your/dataset.csv")
     file_path = file_path.replace('\\', '/')
 
     # User input for file path of the testing dataset
@@ -56,6 +58,10 @@ def main():
             final_data=preprocess_and_predict(test_data,"multinomial_nb_model.pkl")
             st.subheader("Predictions on the same dataset successfully done!!")
             st.write(final_data)
+
+            st.write("Approach 1 finised!!!!")
+
+            st.write("Approach 2 is ....coming up")
 
         except Exception as e:
             st.error(f"An error occurred while processing the dataset. Please check your file path or contact support: {e}")

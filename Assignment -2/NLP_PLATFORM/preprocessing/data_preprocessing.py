@@ -4,7 +4,7 @@ Author - Aditya Bhatt 8:05 AM 14-02-2023
 Objective - 
 1. dataframe Cleaning Module
 '''
-
+import streamlit as st
 import pandas as pd
 import nltk
 import re
@@ -18,6 +18,7 @@ from sklearn.metrics import accuracy_score
 import joblib
 import numpy as np
 from typing import Union
+import matplotlib.pyplot as plt
 
 
 def clean_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
@@ -63,20 +64,19 @@ def multinomial_nb(dataframe: pd.DataFrame) -> float:
     X = dataframe['text']
     y = dataframe['sentiment']
 
-    # Train-test split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
     # Vectorize text data
     vectorizer = CountVectorizer(binary=True)
-    X_train_vec = vectorizer.fit_transform(X_train)
-    X_test_vec = vectorizer.transform(X_test)
+    X_vec = vectorizer.fit_transform(X)  # Vectorize the entire dataset
+
+    # Train-test split
+    X_train, X_test, y_train, y_test = train_test_split(X_vec, y, test_size=0.2, random_state=42)
 
     # Build and train Multinomial Naive Bayes classifier
     nb_classifier = MultinomialNB()
-    nb_classifier.fit(X_train_vec, y_train)
+    nb_classifier.fit(X_train, y_train)
 
     # Predictions
-    y_pred = nb_classifier.predict(X_test_vec)
+    y_pred = nb_classifier.predict(X_test)
 
     # Evaluate the model
     accuracy = accuracy_score(y_test, y_pred)
@@ -88,6 +88,8 @@ def multinomial_nb(dataframe: pd.DataFrame) -> float:
     print("Model dumped")
 
     return accuracy
+
+
 
 
 def preprocess_and_predict(test_data: pd.DataFrame, model_path: str, vectorizer: Union[CountVectorizer, None] = None) -> pd.DataFrame:
@@ -110,5 +112,17 @@ def preprocess_and_predict(test_data: pd.DataFrame, model_path: str, vectorizer:
 
     # Add predictions to the DataFrame
     test_data['predictions'] = predictions
+
+    test_data['predictions'].replace( {-1: 'negative', 0: 'neutral', 1: 'positive'},inplace=True)
+
+    # Create a bar chart to visualize the distribution of sentiment predictions
+    sentiment_counts = test_data['predictions'].value_counts()
+    fig, ax = plt.subplots()
+    colors = {'negative': 'red', 'neutral': 'yellow', 'positive': 'green'}
+    sentiment_counts.plot(kind='bar', ax=ax, color=[colors.get(x, 'grey') for x in sentiment_counts.index])
+    ax.set_xlabel('Sentiment')
+    ax.set_ylabel('Number of Reviews')
+    ax.set_title('Distribution of Sentiment Predictions')
+    st.pyplot(fig)
 
     return test_data
