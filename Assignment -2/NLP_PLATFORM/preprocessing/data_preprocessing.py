@@ -16,6 +16,9 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import accuracy_score
 import joblib
+import numpy as np
+from typing import Union
+
 
 def clean_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
         # Convert non-string values to empty strings
@@ -85,3 +88,27 @@ def multinomial_nb(dataframe: pd.DataFrame) -> float:
     print("Model dumped")
 
     return accuracy
+
+
+def preprocess_and_predict(test_data: pd.DataFrame, model_path: str, vectorizer: Union[CountVectorizer, None] = None) -> pd.DataFrame:
+    """
+    Preprocess the test data and make predictions using the provided model.
+    """
+    # Load the trained model
+    model = joblib.load(model_path)
+    # test_data.dropna(inplace=True)
+
+    # Vectorize text data using binary count vectorizer
+    if vectorizer is None:
+        vectorizer = CountVectorizer(binary=True)
+        vectorizer.fit(test_data['text'])  # Fit the vectorizer on the test data
+    
+    test_data_vec = vectorizer.transform(test_data['text'])
+
+    # Make predictions
+    predictions = model.predict(test_data_vec)
+
+    # Add predictions to the DataFrame
+    test_data['predictions'] = predictions
+
+    return test_data
