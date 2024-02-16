@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 from utils.data_loader import get_data,get_data_test
-from preprocessing.data_preprocessing import clean_dataframe, multinomial_nb,preprocess_and_predict
+from preprocessing.data_preprocessing import clean_dataframe, multinomial_nb,preprocess_and_predict,word_2_vec_custom,train_svm,preprocess_and_predict_svm
 
 def main():
     st.title("Auto Sentiment Analysis")
@@ -61,7 +61,18 @@ def main():
 
             st.write("Approach 1 finised!!!!")
 
-            st.write("Approach 2 is ....coming up")
+            st.write("Approach 2 is custom word2vec with SVM!!!")
+
+            wor2vec=word_2_vec_custom(data)
+            accuracy=train_svm(data)
+            st.success(f"SVM with word2vec trained sucesfully with an accuracy of {accuracy}")
+           
+            final_data=preprocess_and_predict_svm(test_data)
+            st.subheader("Predictions on the same dataset successfully done!!")
+            st.write(final_data)
+
+            st.write("Approach 2 is finished!!!")
+
 
         except Exception as e:
             st.error(f"An error occurred while processing the dataset. Please check your file path or contact support: {e}")

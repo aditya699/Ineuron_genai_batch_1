@@ -19,7 +19,10 @@ import joblib
 import numpy as np
 from typing import Union
 import matplotlib.pyplot as plt
-
+from gensim.models import Word2Vec
+from nltk.tokenize import word_tokenize
+import nltk
+from sklearn.svm import SVC
 
 def clean_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
         # Convert non-string values to empty strings
@@ -114,6 +117,98 @@ def preprocess_and_predict(test_data: pd.DataFrame, model_path: str, vectorizer:
     test_data['predictions'] = predictions
 
     test_data['predictions'].replace( {-1: 'negative', 0: 'neutral', 1: 'positive'},inplace=True)
+
+    # Create a bar chart to visualize the distribution of sentiment predictions
+    sentiment_counts = test_data['predictions'].value_counts()
+    fig, ax = plt.subplots()
+    colors = {'negative': 'red', 'neutral': 'yellow', 'positive': 'green'}
+    sentiment_counts.plot(kind='bar', ax=ax, color=[colors.get(x, 'grey') for x in sentiment_counts.index])
+    ax.set_xlabel('Sentiment')
+    ax.set_ylabel('Number of Reviews')
+    ax.set_title('Distribution of Sentiment Predictions')
+    st.pyplot(fig)
+
+    return test_data
+
+def word_2_vec_custom(data):
+     # Tokenize the corpus
+    tokenized_corpus = [word_tokenize(doc.lower()) for doc in data['text']]
+
+    # Train Word2Vec model
+    model = Word2Vec(sentences=tokenized_corpus, vector_size=100, window=5, min_count=1, workers=4)
+
+    # Save the trained model
+    model.save("custom_word2vec.model")
+
+    return None
+
+def train_svm(data):
+
+    # Load the trained Word2Vec model
+    model = Word2Vec.load("custom_word2vec.model")
+        # Extract text and labels
+    X_text = data['text']
+    y = data['sentiment']
+
+    # Tokenize and compute average word vectors for each document
+    X = []
+    for text in X_text:
+        tokens = word_tokenize(text.lower())
+        vectors = [model.wv[token] for token in tokens if token in model.wv]
+        if vectors:
+            doc_vector = np.mean(vectors, axis=0)
+            X.append(doc_vector)
+        else:
+            X.append(np.zeros(model.vector_size))  # Use zero vector for out-of-vocabulary words
+
+    # Split data into train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Train SVM classifier
+    svm_classifier = SVC(kernel='linear')  # You can experiment with different kernels
+    svm_classifier.fit(X_train, y_train)
+
+    # Make predictions
+    y_pred = svm_classifier.predict(X_test)
+
+    # Evaluate the model
+    accuracy = accuracy_score(y_test, y_pred)
+    
+    # Dump the trained model
+    joblib.dump(svm_classifier, 'svm_model.pkl')
+
+    return accuracy
+
+def preprocess_and_predict_svm(test_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Preprocess the test data and make predictions using the provided model.
+    """
+    # Load the trained Word2Vec model
+    model = Word2Vec.load("custom_word2vec.model")
+
+    # Tokenize and compute average word vectors for each document
+    X = []
+    for text in test_data['text']:
+        tokens = word_tokenize(text.lower())
+        vectors = [model.wv[token] for token in tokens if token in model.wv]
+        if vectors:
+            doc_vector = np.mean(vectors, axis=0)
+            X.append(doc_vector)
+        else:
+            X.append(np.zeros(model.vector_size))  # Use zero vector for out-of-vocabulary words
+
+    # Load the trained SVM model from the fixed path
+    svm_model = joblib.load("svm_model.pkl")
+
+    # Make predictions
+    predictions = svm_model.predict(X)
+
+    # Add predictions to the DataFrame
+    test_data['predictions'] = predictions
+
+    # Map numeric predictions to sentiment labels
+    sentiment_map = {-1: 'negative', 0: 'neutral', 1: 'positive'}
+    test_data['predictions'] = test_data['predictions'].map(sentiment_map)
 
     # Create a bar chart to visualize the distribution of sentiment predictions
     sentiment_counts = test_data['predictions'].value_counts()
