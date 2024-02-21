@@ -1,8 +1,13 @@
 import streamlit as st
 import pandas as pd
-import joblib
-from utils.data_loader import get_data,get_data_test
-from preprocessing.data_preprocessing import clean_dataframe, multinomial_nb,preprocess_and_predict,word_2_vec_custom,train_svm,preprocess_and_predict_svm
+from utils.data_loader import get_data, get_data_test
+from preprocessing.data_preprocessing import clean_dataframe, multinomial_nb, preprocess_and_predict, word_2_vec_custom, train_svm, preprocess_and_predict_svm
+from transformers import pipeline
+
+# Function to extract label with the highest score
+def get_highest_score_label(scores):
+    max_score_label = max(scores, key=lambda x: x['score'])
+    return max_score_label['label']
 
 def main():
     st.title("Auto Sentiment Analysis")
@@ -53,26 +58,50 @@ def main():
             st.subheader("Cleaned Data Snapshot")
             st.write(test_data.head(5))
 
-            #Prediction on the same
-
-            final_data=preprocess_and_predict(test_data,"multinomial_nb_model.pkl")
+            # Prediction on the same
+            final_data = preprocess_and_predict(test_data, "multinomial_nb_model.pkl")
             st.subheader("Predictions on the same dataset successfully done!!")
             st.write(final_data)
 
-            st.write("Approach 1 finised!!!!")
+            st.write("Approach 1 finished!!!!")
 
             st.write("Approach 2 is custom word2vec with SVM!!!")
 
-            wor2vec=word_2_vec_custom(data)
-            accuracy=train_svm(data)
-            st.success(f"SVM with word2vec trained sucesfully with an accuracy of {accuracy}")
+            wor2vec = word_2_vec_custom(data)
+            accuracy = train_svm(data)
+            st.success(f"SVM with word2vec trained successfully with an accuracy of {accuracy}")
            
-            final_data=preprocess_and_predict_svm(test_data)
+            final_data = preprocess_and_predict_svm(test_data)
             st.subheader("Predictions on the same dataset successfully done!!")
             st.write(final_data)
 
-            st.write("Approach 2 is finished!!!")
+            st.write("Approach 2 finished!!!")
 
+            st.write("Approach 3 is DistilBERT Pretrained Model")
+
+            # Load the pre-trained sentiment classifier pipeline
+            distilled_student_sentiment_classifier = pipeline(
+                model="lxyuan/distilbert-base-multilingual-cased-sentiments-student", 
+                return_all_scores=True
+            )
+
+            try:
+                st.write("This will take time grab a coffe and chill!!!")
+                # Get sentiment scores for the test data
+                sentiment_scores = [distilled_student_sentiment_classifier(text) for text in test_data['text']]
+
+                # Extract label with the highest score for each text
+                predicted_labels = [get_highest_score_label(scores[0]) for scores in sentiment_scores]
+
+                # Create a DataFrame to display the predictions
+                df_predictions = pd.DataFrame({"Text": test_data["text"], "Predicted Sentiment": predicted_labels})
+
+                # Output the predicted sentiments in DataFrame format
+                st.subheader("Predicted Sentiments - DistilBERT")
+                st.write(df_predictions)
+
+            except Exception as e:
+                st.error(f"An error occurred while predicting sentiment using DistilBERT. Please check your file path or contact support: {e}")
 
         except Exception as e:
             st.error(f"An error occurred while processing the dataset. Please check your file path or contact support: {e}")
